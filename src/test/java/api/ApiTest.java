@@ -2,10 +2,12 @@ package api;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import redis.Application;
 import redis.clients.jedis.JedisPool;
 
+import java.io.IOException;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static redis.Application.main;
 
 
 public class ApiTest {
@@ -16,16 +18,29 @@ public class ApiTest {
     @BeforeAll
     private static void setUp() {
         String[] args = {};
-        new Thread(() -> Application.main(args)).start(); // run redis server background
+        runServerBackground(args); // run redis server background
         pool = new JedisPool(LOCALHOST, PORT);
 
+    }
+
+    private static void runServerBackground(String[] args) {
+        new Thread(() -> {
+            try {
+                main(args);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }).start();
     }
 
     @Test
     public void ping() throws Exception {
         try (var jedis = pool.getResource()) {
-            String result = jedis.ping();
-            assertEquals(result, "PONG");
+            String result1 = jedis.ping();
+            String result2 = jedis.ping();
+
+            assertEquals(result1, "PONG");
+            assertEquals(result2, "PONG");
         }
     }
 }
